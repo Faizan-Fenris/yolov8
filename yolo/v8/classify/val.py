@@ -60,7 +60,8 @@ class ClassificationValidator(BaseValidator):
         return self.metrics.results_dict
 
     def build_dataset(self, img_path):
-        return ClassificationDataset(root=img_path, args=self.args, augment=False)
+        dataset = ClassificationDataset(root=img_path, args=self.args, augment=False)
+        return dataset
 
     def get_dataloader(self, dataset_path, batch_size):
         """Builds and returns a data loader for classification tasks with given parameters."""

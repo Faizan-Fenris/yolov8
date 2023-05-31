@@ -1,10 +1,9 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
-
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 from ultralytics.yolo.utils import LOGGER, TESTS_RUNNING
-from ultralytics.yolo.utils.torch_utils import model_info_for_loggers
+from ultralytics.yolo.utils.torch_utils import get_flops, get_num_params
 
 try:
     import neptune
@@ -69,7 +68,11 @@ def on_train_epoch_end(trainer):
 def on_fit_epoch_end(trainer):
     """Callback function called at end of each fit (train+val) epoch."""
     if run and trainer.epoch == 0:
-        run['Configuration/Model'] = model_info_for_loggers(trainer)
+        model_info = {
+            'parameters': get_num_params(trainer.model),
+            'GFLOPs': round(get_flops(trainer.model), 3),
+            'speed(ms)': round(trainer.validator.speed['inference'], 3)}
+        run['Configuration/Model'] = model_info
     _log_scalars(trainer.metrics, trainer.epoch + 1)
 
 

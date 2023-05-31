@@ -5,7 +5,7 @@ from time import time
 
 from ultralytics.hub.utils import PREFIX, events
 from ultralytics.yolo.utils import LOGGER
-from ultralytics.yolo.utils.torch_utils import model_info_for_loggers
+from ultralytics.yolo.utils.torch_utils import get_flops, get_num_params
 
 
 def on_pretrain_routine_end(trainer):
@@ -24,7 +24,11 @@ def on_fit_epoch_end(trainer):
         # Upload metrics after val end
         all_plots = {**trainer.label_loss_items(trainer.tloss, prefix='train'), **trainer.metrics}
         if trainer.epoch == 0:
-            all_plots = {**all_plots, **model_info_for_loggers(trainer)}
+            model_info = {
+                'model/parameters': get_num_params(trainer.model),
+                'model/GFLOPs': round(get_flops(trainer.model), 3),
+                'model/speed(ms)': round(trainer.validator.speed['inference'], 3)}
+            all_plots = {**all_plots, **model_info}
         session.metrics_queue[trainer.epoch] = json.dumps(all_plots)
         if time() - session.timers['metrics'] > session.rate_limits['metrics']:
             session.upload_metrics()

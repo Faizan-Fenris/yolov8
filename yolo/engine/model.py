@@ -238,7 +238,7 @@ class YOLO:
         is_cli = (sys.argv[0].endswith('yolo') or sys.argv[0].endswith('ultralytics')) and any(
             x in sys.argv for x in ('predict', 'track', 'mode=predict', 'mode=track'))
         overrides = self.overrides.copy()
-        overrides['conf'] = 0.25
+        overrides['conf'] = 0.50
         overrides.update(kwargs)  # prefer kwargs
         overrides['mode'] = kwargs.get('mode', 'predict')
         assert overrides['mode'] in ['track', 'predict']
@@ -331,12 +331,12 @@ class YOLO:
         overrides = self.overrides.copy()
         overrides.update(kwargs)
         overrides['mode'] = 'export'
-        if overrides.get('imgsz') is None:
-            overrides['imgsz'] = self.model.args['imgsz']  # use trained imgsz unless custom value is passed
-        if overrides.get('batch') is None:
-            overrides['batch'] = 1  # default to 1 if not modified
         args = get_cfg(cfg=DEFAULT_CFG, overrides=overrides)
         args.task = self.task
+        if args.imgsz == DEFAULT_CFG.imgsz:
+            args.imgsz = self.model.args['imgsz']  # use trained imgsz unless custom value is passed
+        if args.batch == DEFAULT_CFG.batch:
+            args.batch = 1  # default to 1 if not modified
         return Exporter(overrides=args, _callbacks=self.callbacks)(model=self.model)
 
     def train(self, **kwargs):
@@ -353,10 +353,10 @@ class YOLO:
             kwargs = self.session.train_args
         check_pip_update_available()
         overrides = self.overrides.copy()
+        overrides.update(kwargs)
         if kwargs.get('cfg'):
             LOGGER.info(f"cfg file passed. Overriding default params with {kwargs['cfg']}.")
             overrides = yaml_load(check_yaml(kwargs['cfg']))
-        overrides.update(kwargs)
         overrides['mode'] = 'train'
         if not overrides.get('data'):
             raise AttributeError("Dataset required but missing, i.e. pass 'data=coco128.yaml'")
